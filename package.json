@@ -1,6 +1,6 @@
 {
   "name": "nst-serialport",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "Serial port websockets client",
   "main": "index.js",
   "scripts": {
@@ -8,7 +8,7 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "bin": {
-    "nst-serialport": "./index.js"
+    "nst-serialport": "withNode.js"
   },
   "repository": {
     "type": "git",
