@@ -11,6 +11,27 @@ https://github.com/nstrumenta/nst-websockets.git
 npm install -g nst-serialport
 ```
 
+## Configuration
+
+local file ```nst-serialport-config.json``` can specify multiple devices with comName, name, and baudRate
+
+```json
+{
+  "devices": [
+    {
+      "comName": "COM42",
+      "name": "u-blox",
+      "baudRate": 38600
+    },
+    {
+      "comName": "COM13",
+      "name": "can",
+      "baudRate": 115200
+    }
+  ]
+}
+```
+
 ## How to use
 
 ```bash

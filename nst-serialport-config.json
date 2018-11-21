@@ -1,0 +1,9 @@
+{
+  "devices": [
+    {
+      "comName": "COM42",
+      "name": "u-blox",
+      "baudRate": 38600
+    }
+  ]
+}
