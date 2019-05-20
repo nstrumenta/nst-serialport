@@ -202,6 +202,7 @@ SerialPort.list(function (err, ports) {
                     id: serialDevice.name,
                     comName: port.comName,
                     data: {
+                      serialPortTimestamp: Date.now(),
                       traxTimestamp: timestamp,
                       acc: acc,
                       mag: mag,
