@@ -27,7 +27,7 @@
   "homepage": "https://github.com/nstrumenta/nst-serialport#readme",
   "dependencies": {
     "minimist": "^1.2.0",
-    "serialport": "^7.0.2",
+    "serialport": "^9.0.4",
     "socket.io-client": "^2.1.1"
   }
 }

@@ -1,61 +1,61 @@
 var SerialPort = require("serialport");
-var argv = require('minimist')(process.argv.slice(2));
-var port = argv.port || 8080;
+var argv = require("minimist")(process.argv.slice(2));
+var port = argv.port || 8081;
 
 var serialDevices = [
   {
     name: "bluecoin",
     vendorId: "0483",
     productId: "5740",
-    baudRate: 115200
+    baudRate: 115200,
   },
   {
     name: "nucleo",
     vendorId: "0483",
     productId: "374b",
-    baudRate: 9600
+    baudRate: 9600,
   },
   {
     name: "canlogger",
     vendorId: "1cbe",
     productId: "021a",
-    baudRate: 115200
+    baudRate: 115200,
   },
   {
     name: "trax",
     vendorId: "0403",
     productId: "6015",
-    baudRate: 38600
+    baudRate: 38600,
   },
   {
     name: "teseo",
     vendorId: "067b",
     productId: "2303",
-    baudRate: 115200
-  }
-]
+    baudRate: 115200,
+  },
+];
 
 var fs = require("fs");
-if (fs.existsSync('nst-serialport-config.json')) {
-  console.log('nst-serialport-config.json begin:');
-  var config = JSON.parse(fs.readFileSync("nst-serialport-config.json", "utf8"));
-  (config.devices).forEach(element => {
+if (fs.existsSync("nst-serialport-config.json")) {
+  console.log("nst-serialport-config.json begin:");
+  var config = JSON.parse(
+    fs.readFileSync("nst-serialport-config.json", "utf8")
+  );
+  config.devices.forEach((element) => {
     console.dir(element);
     serialDevices.push(element);
   });
-  console.log('nst-serialport-config.json end');
+  console.log("nst-serialport-config.json end");
 }
-
-
 
 // TRAX vendor=1027 "FTDI", product=24597 "FT230X Basic UART"
 
-var socket = require('socket.io-client')('http://0.0.0.0:' + port);
-socket.on('connect', function () {
-  console.log('connected to server');
+var socket = require("socket.io-client")("http://0.0.0.0:" + port);
+socket.on("connect", function () {
+  console.log("connected to server");
 });
-socket.on('disconnect', function () {
-  console.log('disconnected from server');
+socket.on("disconnect", function () {
+  console.log("disconnected from server");
 });
 
 var traxData = new Uint8Array(48);
@@ -63,71 +63,75 @@ var traxIndex = 0;
 
 var teseoString = "";
 
-function match(port, device){
+function match(port, device) {
   var match = false;
-  //match on comName from config file
-  if (device.comName) {
-    match = (device.comName == port.comName)
+  //match on path from config file
+  if (device.path) {
+    match = device.path == port.path;
   }
   //match on vId and pId
-  match = (((port.vendorId) && port.vendorId.toLowerCase() == device.vendorId) && (port.productId && (port.productId.toLowerCase() == device.productId)));
+  match =
+    port.vendorId &&
+    port.vendorId.toLowerCase() == device.vendorId &&
+    port.productId &&
+    port.productId.toLowerCase() == device.productId;
   return match;
 }
 
-SerialPort.list(function (err, ports) {
+SerialPort.list().then((ports) => {
   ports.forEach(function (port) {
     console.dir(port);
     //look for device in list
     serialDevices.forEach((device) => {
       var serialDevice = device;
       if (match(port, device)) {
-        console.log('connecting to', port.comName);
-        var serialPort = new SerialPort(port.comName, {
+        console.log("connecting to", port.path);
+        var serialPort = new SerialPort(port.path, {
           baudRate: device.baudRate,
         });
 
-        serialPort.on('open', function () {
+        serialPort.on("open", function () {
           console.log("Open");
-          if (serialDevice.name == 'bluecoin') {
-            console.log('sending start byte 0x05');
+          if (serialDevice.name == "bluecoin") {
+            console.log("sending start byte 0x05");
 
             serialPort.write([0x05]);
           }
         });
-        serialPort.on('error', function (err) {
+        serialPort.on("error", function (err) {
           console.error(err);
         });
 
         console.log(serialDevice.name);
-        serialPort.on('data', function (data) {
+        serialPort.on("data", function (data) {
           switch (serialDevice.name) {
             case "teseo":
               teseoString += data.toString();
-              var teseoSplit = teseoString.split('\r\n');
+              var teseoSplit = teseoString.split("\r\n");
               for (var i = 0; i < teseoSplit.length - 1; i++) {
                 var message = {
                   id: serialDevice.name,
-                  comName: port.comName,
-                  data: teseoSplit[i]
-                }
+                  path: port.path,
+                  data: teseoSplit[i],
+                };
                 // console.log(teseoSplit[i]);
-                socket.emit('sensor', message);
+                socket.emit("sensor", message);
               }
               teseoString = teseoSplit[i];
 
               break;
 
             case "trax":
-              //console.log(data);
+              console.log(data);
               function unaligned() {
                 traxIndex = 0;
                 console.log(dataIndex);
               }
               for (var dataIndex = 0; dataIndex < data.length; dataIndex++) {
                 //00 19 5f
-                if ((traxIndex == 0) && (data[dataIndex] != 0x00)) unaligned();
-                if ((traxIndex == 1) && (data[dataIndex] != 0x19)) unaligned();
-                if ((traxIndex == 2) && (data[dataIndex] != 0x5f)) unaligned();
+                if (traxIndex == 0 && data[dataIndex] != 0x00) unaligned();
+                if (traxIndex == 1 && data[dataIndex] != 0x19) unaligned();
+                if (traxIndex == 2 && data[dataIndex] != 0x5f) unaligned();
 
                 traxData[traxIndex++] = data[dataIndex];
 
@@ -158,7 +162,6 @@ SerialPort.list(function (err, ports) {
 
                   // Output format example
                   // 00 19 5F FF 5A FB 6F 07 87 00 18 00 C3 3F CF FF D9 FF F1 FF FF 2E D5 7E 7E
-
 
                   // There are 3 bytes of header:
                   // 00 19 – Total 25 bytes
@@ -200,30 +203,30 @@ SerialPort.list(function (err, ports) {
                   traxIndex = 0;
                   var message = {
                     id: serialDevice.name,
-                    comName: port.comName,
+                    path: port.path,
                     data: {
                       serialPortTimestamp: Date.now(),
                       traxTimestamp: timestamp,
                       acc: acc,
                       mag: mag,
-                      gyro: gyro
-                    }
-                  }
-                  // console.log(message);                                
-                  socket.emit('sensor', message);
+                      gyro: gyro,
+                    },
+                  };
+                  console.log(message);
+                  socket.emit("sensor", message);
                 }
               }
               break;
 
             default:
-              // console.log(serialDevice.name);           
+              // console.log(serialDevice.name);
               // console.log(data);
               var message = {
                 id: serialDevice.name,
-                comName: port.comName,
-                data: data
-              }
-              socket.emit('sensor', message);
+                path: port.path,
+                data: data,
+              };
+              socket.emit("sensor", message);
               break;
           }
         });
