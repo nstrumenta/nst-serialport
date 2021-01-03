@@ -1,6 +1,6 @@
 var SerialPort = require("serialport");
 var argv = require("minimist")(process.argv.slice(2));
-var port = argv.port || 8081;
+var port = argv.port || 8080;
 
 var serialDevices = [
   {
