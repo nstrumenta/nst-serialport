@@ -50,11 +50,10 @@ if (fs.existsSync("nst-serialport-config.json")) {
   console.log("nst-serialport-config.json end");
 }
 
-// TRAX vendor=1027 "FTDI", product=24597 "FT230X Basic UART"
-
-var socket = require("socket.io-client")("http://" + host + ":" + port);
+const socketAddress = `http://${host}:${port}`
+var socket = require("socket.io-client")(socketAddress);
 socket.on("connect", function () {
-  console.log("connected to server http://" + host + ":" + port);
+  console.log("connected to server " + socketAddress);
 });
 socket.on("disconnect", function () {
   console.log("disconnected from server");
@@ -65,30 +64,30 @@ var traxIndex = 0;
 
 var teseoString = "";
 
-function match(port, device) {
+function match(devicePort, device) {
   var match = false;
   //match on path from config file
   if (device.path) {
-    match = device.path == port.path;
+    match = device.path == devicePort.path;
   }
   //match on vId and pId
   match =
-    port.vendorId &&
-    port.vendorId.toLowerCase() == device.vendorId &&
-    port.productId &&
-    port.productId.toLowerCase() == device.productId;
+    devicePort.vendorId &&
+    devicePort.vendorId.toLowerCase() == device.vendorId &&
+    devicePort.productId &&
+    devicePort.productId.toLowerCase() == device.productId;
   return match;
 }
 
-SerialPort.list().then((ports) => {
-  ports.forEach(function (port) {
-    console.dir(port);
+SerialPort.list().then((devicePorts) => {
+  devicePorts.forEach(function (devicePort) {
+    console.dir(devicePort);
     //look for device in list
     serialDevices.forEach((device) => {
       var serialDevice = device;
-      if (match(port, device)) {
-        console.log("connecting to", port.path, serialDevice.name);
-        var serialPort = new SerialPort(port.path, {
+      if (match(devicePort, device)) {
+        console.log("connecting to", devicePort.path, serialDevice.name);
+        var serialPort = new SerialPort(devicePort.path, {
           baudRate: device.baudRate,
         });
 
@@ -112,7 +111,7 @@ SerialPort.list().then((ports) => {
               for (var i = 0; i < teseoSplit.length - 1; i++) {
                 var message = {
                   id: serialDevice.name,
-                  path: port.path,
+                  path: devicePort.path,
                   data: teseoSplit[i],
                 };
                 // console.log(teseoSplit[i]);
@@ -205,7 +204,7 @@ SerialPort.list().then((ports) => {
                   traxIndex = 0;
                   var message = {
                     id: serialDevice.name,
-                    path: port.path,
+                    path: devicePort.path,
                     data: {
                       serialPortTimestamp: Date.now(),
                       traxTimestamp: timestamp,
@@ -227,7 +226,7 @@ SerialPort.list().then((ports) => {
               // console.log(data);
               var message = {
                 id: serialDevice.name,
-                path: port.path,
+                path: devicePort.path,
                 data: data,
               };
               socket.emit("sensor", message);
