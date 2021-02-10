@@ -1,6 +1,8 @@
 var SerialPort = require("serialport");
 var argv = require("minimist")(process.argv.slice(2));
+var host = argv.host || "0.0.0.0";
 var port = argv.port || 8080;
+var debug = argv.debug ? argv.debug : false;
 
 var serialDevices = [
   {
@@ -50,9 +52,9 @@ if (fs.existsSync("nst-serialport-config.json")) {
 
 // TRAX vendor=1027 "FTDI", product=24597 "FT230X Basic UART"
 
-var socket = require("socket.io-client")("http://0.0.0.0:" + port);
+var socket = require("socket.io-client")("http://" + host + ":" + port);
 socket.on("connect", function () {
-  console.log("connected to server");
+  console.log("connected to server http://" + host + ":" + port);
 });
 socket.on("disconnect", function () {
   console.log("disconnected from server");
@@ -85,7 +87,7 @@ SerialPort.list().then((ports) => {
     serialDevices.forEach((device) => {
       var serialDevice = device;
       if (match(port, device)) {
-        console.log("connecting to", port.path);
+        console.log("connecting to", port.path, serialDevice.name);
         var serialPort = new SerialPort(port.path, {
           baudRate: device.baudRate,
         });
@@ -102,7 +104,6 @@ SerialPort.list().then((ports) => {
           console.error(err);
         });
 
-        console.log(serialDevice.name);
         serialPort.on("data", function (data) {
           switch (serialDevice.name) {
             case "teseo":
@@ -122,10 +123,11 @@ SerialPort.list().then((ports) => {
               break;
 
             case "trax":
-              console.log(data);
               function unaligned() {
                 traxIndex = 0;
-                console.log(dataIndex);
+                if (debug) {
+                  console.log(dataIndex);
+                }
               }
               for (var dataIndex = 0; dataIndex < data.length; dataIndex++) {
                 //00 19 5f
@@ -212,7 +214,9 @@ SerialPort.list().then((ports) => {
                       gyro: gyro,
                     },
                   };
-                  console.log(message);
+                  if (debug) {
+                    console.log(message);
+                  }
                   socket.emit("sensor", message);
                 }
               }

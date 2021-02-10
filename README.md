@@ -7,9 +7,16 @@ https://github.com/nstrumenta/nst-websockets.git
 
 ## Installation
 
+### local install
+```bash
+npm install
+```
+
+### global install
 ```bash
 npm install -g nst-serialport
 ```
+
 
 ## Configuration
 
@@ -35,8 +42,10 @@ local file ```nst-serialport-config.json``` can specify multiple devices with co
 ## How to use
 
 ```bash
-nst-serialport --port 8080
+node index.js --host 34.71.33.199 --port 8080
 ```
+
+optional flag `--debug` for additional output
 
 ```bash
 $ nst-serialport --port 8080
