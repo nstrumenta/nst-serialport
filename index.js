@@ -4,6 +4,17 @@ var host = argv.host || "0.0.0.0";
 var port = argv.port || 8080;
 var debug = argv.debug ? argv.debug : false;
 
+const nodeWebSocket = require("ws");
+const NstrumentaClient =
+  require("nstrumenta/dist/models/Client").NstrumentaClient;
+const nstrumenta = new NstrumentaClient({ hostUrl: "ws://localhost:8088" });
+
+nstrumenta.addListener("open", () => {
+  nstrumenta.subscribe("_host-status", console.log);
+});
+
+nstrumenta.init(nodeWebSocket);
+
 var serialDevices = [
   {
     name: "bluecoin",
@@ -50,7 +61,7 @@ if (fs.existsSync("nst-serialport-config.json")) {
   console.log("nst-serialport-config.json end");
 }
 
-const socketAddress = `http://${host}:${port}`
+const socketAddress = `http://${host}:${port}`;
 var socket = require("socket.io-client")(socketAddress);
 socket.on("connect", function () {
   console.log("connected to server " + socketAddress);
@@ -92,6 +103,9 @@ SerialPort.list().then((devicePorts) => {
         });
 
         serialPort.on("open", function () {
+          nstrumenta.subscribe("trax-in", (message) => {
+            serialPort.write(message);
+          });
           console.log("Open");
           if (serialDevice.name == "bluecoin") {
             console.log("sending start byte 0x05");
@@ -104,6 +118,7 @@ SerialPort.list().then((devicePorts) => {
         });
 
         serialPort.on("data", function (data) {
+          nstrumenta.send("trax", data);
           switch (serialDevice.name) {
             case "teseo":
               teseoString += data.toString();
