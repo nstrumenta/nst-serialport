@@ -1,8 +1,21 @@
-var SerialPort = require("serialport");
-var argv = require("minimist")(process.argv.slice(2));
-var host = argv.host || "0.0.0.0";
-var port = argv.port || 8080;
-var debug = argv.debug ? argv.debug : false;
+import SerialPort from "serialport";
+import minimist from "minimist";
+import { NstrumentaClient } from "nstrumenta/dist/models/Client.js";
+import ws from "ws";
+import fs from "fs";
+
+const argv = minimist(process.argv.slice(2));
+const hostUrl = argv.hostUrl || "ws://localhost:8088";
+
+const debug = argv.debug ? argv.debug : false;
+
+const nst = new NstrumentaClient({ hostUrl });
+
+nst.addListener("open", () => {
+  nst.subscribe("_host-status", console.log);
+});
+
+nst.init(ws);
 
 var serialDevices = [
   {
@@ -37,7 +50,6 @@ var serialDevices = [
   },
 ];
 
-var fs = require("fs");
 if (fs.existsSync("nst-serialport-config.json")) {
   console.log("nst-serialport-config.json begin:");
   var config = JSON.parse(
@@ -49,15 +61,6 @@ if (fs.existsSync("nst-serialport-config.json")) {
   });
   console.log("nst-serialport-config.json end");
 }
-
-const socketAddress = `http://${host}:${port}`
-var socket = require("socket.io-client")(socketAddress);
-socket.on("connect", function () {
-  console.log("connected to server " + socketAddress);
-});
-socket.on("disconnect", function () {
-  console.log("disconnected from server");
-});
 
 var traxData = new Uint8Array(48);
 var traxIndex = 0;
@@ -92,6 +95,9 @@ SerialPort.list().then((devicePorts) => {
         });
 
         serialPort.on("open", function () {
+          nst.subscribe("trax-in", (message) => {
+            serialPort.write(message);
+          });
           console.log("Open");
           if (serialDevice.name == "bluecoin") {
             console.log("sending start byte 0x05");
@@ -115,7 +121,8 @@ SerialPort.list().then((devicePorts) => {
                   data: teseoSplit[i],
                 };
                 // console.log(teseoSplit[i]);
-                socket.emit("sensor", message);
+
+                nst.send("teseo", message);
               }
               teseoString = teseoSplit[i];
 
@@ -216,7 +223,8 @@ SerialPort.list().then((devicePorts) => {
                   if (debug) {
                     console.log(message);
                   }
-                  socket.emit("sensor", message);
+
+                  nst.send("trax", message);
                 }
               }
               break;
@@ -229,7 +237,8 @@ SerialPort.list().then((devicePorts) => {
                 path: devicePort.path,
                 data: data,
               };
-              socket.emit("sensor", message);
+
+              nst.send(serialDevice.name, data);
               break;
           }
         });
