@@ -5,17 +5,17 @@ import ws from "ws";
 import fs from "fs";
 
 const argv = minimist(process.argv.slice(2));
-const hostUrl = argv.hostUrl || "ws://localhost:8088";
+const hostUrl = argv.hostUrl;
 
 const debug = argv.debug ? argv.debug : false;
 
-const nst = new NstrumentaClient({ hostUrl });
+const nst = hostUrl ? new NstrumentaClient({ hostUrl }) : null;
 
-nst.addListener("open", () => {
+nst?.addListener("open", () => {
   nst.subscribe("_host-status", console.log);
 });
 
-nst.init(ws);
+nst?.init(ws);
 
 var serialDevices = [
   {
@@ -95,7 +95,7 @@ SerialPort.list().then((devicePorts) => {
         });
 
         serialPort.on("open", function () {
-          nst.subscribe("trax-in", (message) => {
+          nst?.subscribe("trax-in", (message) => {
             serialPort.write(message);
           });
           console.log("Open");
@@ -122,7 +122,7 @@ SerialPort.list().then((devicePorts) => {
                 };
                 // console.log(teseoSplit[i]);
 
-                nst.send("teseo", message);
+                nst?.send("teseo", message);
               }
               teseoString = teseoSplit[i];
 
@@ -224,7 +224,7 @@ SerialPort.list().then((devicePorts) => {
                     console.log(message);
                   }
 
-                  nst.send("trax", message);
+                  nst?.send("trax", message);
                 }
               }
               break;
@@ -238,7 +238,7 @@ SerialPort.list().then((devicePorts) => {
                 data: data,
               };
 
-              nst.send(serialDevice.name, data);
+              nst?.send(serialDevice.name, data);
               break;
           }
         });
