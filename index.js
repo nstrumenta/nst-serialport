@@ -1,15 +1,15 @@
 import SerialPort from "serialport";
 import minimist from "minimist";
-import { NstrumentaClient } from "nstrumenta/dist/models/Client.js";
+import { NstrumentaClient } from "nstrumenta";
 import ws from "ws";
 import fs from "fs";
 
 const argv = minimist(process.argv.slice(2));
-const hostUrl = argv.hostUrl;
+const wsUrl = argv.wsUrl;
 
 const debug = argv.debug ? argv.debug : false;
 
-const nst = hostUrl ? new NstrumentaClient({ hostUrl }) : null;
+const nst = wsUrl ? new NstrumentaClient({ wsUrl }) : null;
 
 nst?.addListener("open", () => {
   nst.subscribe("_host-status", console.log);

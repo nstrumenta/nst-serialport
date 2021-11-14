@@ -28,7 +28,7 @@
   "homepage": "https://github.com/nstrumenta/nst-serialport#readme",
   "dependencies": {
     "minimist": "^1.2.0",
-    "nstrumenta": "^1.0.32",
+    "nstrumenta": "^1.0.37",
     "serialport": "^9.0.4",
     "ws": "^8.2.3"
   }
