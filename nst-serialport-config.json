@@ -1,7 +1,7 @@
 {
   "devices": [
     {
-      "name": "trax",
+      "name": "trax2",
       "vendorId": "0403",
       "productId": "6001",
       "baudRate": 38600
