@@ -1,6 +1,6 @@
 {
   "name": "nst-serialport",
-  "version": "1.1.3",
+  "version": "1.1.4",
   "type": "module",
   "description": "Serial port websockets client",
   "main": "index.js",

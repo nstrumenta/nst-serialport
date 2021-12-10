@@ -1,17 +1,16 @@
-import SerialPort from "serialport";
-import minimist from "minimist";
-import { NstrumentaClient } from "nstrumenta";
-import ws from "ws";
-import fs from "fs";
-
-const argv = minimist(process.argv.slice(2));
+var SerialPort = require("serialport");
+const fs = require("fs");
+var argv = require("minimist")(process.argv.slice(2));
 const wsUrl = argv.wsUrl;
 
 const debug = argv.debug ? argv.debug : false;
 
-let serialPort = undefined;
-
+const ws = require("ws");
+const NstrumentaClient =
+  require("nstrumenta").NstrumentaClient;
 const nst = wsUrl ? new NstrumentaClient({ wsUrl }) : null;
+
+let serialPort = undefined;
 
 var serialDevices = [
   {
@@ -68,7 +67,9 @@ const scan = () => {
               nst.send("serialport-events", { "type": "open", serialDevice });
               nst.subscribe("trax-in", (message) => {
                 const bytes = new Uint8Array(message);
-                console.log("trax-in", bytes)
+                if (debug) {
+                  console.log("trax-in", bytes)
+                }
                 serialPort.write(bytes);
               });
             }
@@ -78,6 +79,9 @@ const scan = () => {
           });
 
           serialPort.on("data", function (data) {
+            if (debug) {
+              console.log("data", data)
+            }
             switch (serialDevice.name) {
               default:
                 if (nst) { nst.send(serialDevice.name, data); }
