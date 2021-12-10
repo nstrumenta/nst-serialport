@@ -12,20 +12,6 @@ const debug = argv.debug ? argv.debug : false;
 let serialPort = undefined;
 
 const nst = wsUrl ? new NstrumentaClient({ wsUrl }) : null;
-if (nst) {
-  console.log("nst wsUrl:", wsUrl)
-}
-
-nst?.addListener("open", () => {
-  console.log("nstrumenta open");
-  scan();
-});
-//start scan if nst not set
-if (!nst) {
-  scan();
-}
-
-nst?.init(ws);
 
 var serialDevices = [
   {
@@ -78,12 +64,14 @@ const scan = () => {
           });
 
           serialPort.on("open", function () {
-            nst?.send("serialport-events", { "type": "open", serialDevice });
-            nst?.subscribe("trax-in", (message) => {
-              const bytes = new Uint8Array(message);
-              console.log("trax-in", bytes)
-              serialPort.write(bytes);
-            });
+            if (nst) {
+              nst.send("serialport-events", { "type": "open", serialDevice });
+              nst.subscribe("trax-in", (message) => {
+                const bytes = new Uint8Array(message);
+                console.log("trax-in", bytes)
+                serialPort.write(bytes);
+              });
+            }
           });
           serialPort.on("error", function (err) {
             console.error(err);
@@ -92,7 +80,7 @@ const scan = () => {
           serialPort.on("data", function (data) {
             switch (serialDevice.name) {
               default:
-                nst?.send(serialDevice.name, data);
+                if (nst) { nst.send(serialDevice.name, data); }
                 break;
             }
           });
@@ -101,4 +89,18 @@ const scan = () => {
     });
   });
 }
+
+if (nst) {
+  console.log("nst wsUrl:", wsUrl)
+  nst.addListener("open", () => {
+    console.log("nstrumenta open");
+    scan();
+  });
+
+  nst.init(ws);
+}
+else {
+  scan();
+}
+
 
